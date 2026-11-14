@@ -1,0 +1,149 @@
+<Window
+    x:Class="RnxBluetoothDiagnost.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:RnxBluetoothDiagnost">
+    <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollBarVisibility="Auto">
+        <Grid x:Name="Root" RequestedTheme="Dark" Background="{StaticResource WorkspaceBrush}"
+              Padding="28,24" SizeChanged="LayoutChanged">
+            <StackPanel MaxWidth="1350" Spacing="18">
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Bluetooth-диагностика" FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                        <TextBlock Text="Поиск и сопряжение наушников в Windows 11" Style="{StaticResource MutedTextStyle}"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" VerticalAlignment="Center" Click="OpenBluetoothClick" AutomationProperties.Name="Открыть настройки Bluetooth Windows">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <SymbolIcon Symbol="Setting"/>
+                            <TextBlock Text="Bluetooth Windows"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <Grid x:Name="Workspace" ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition x:Name="SideWidth" Width="306"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel x:Name="Sidebar" Spacing="16">
+                        <Border Style="{StaticResource PanelStyle}">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <FontIcon Glyph="&#xE702;" FontSize="18" Foreground="{StaticResource AccentTextBrush}"/>
+                                    <TextBlock Grid.Column="1" Text="Адаптер и службы" Style="{StaticResource SectionTitleStyle}"/>
+                                </Grid>
+                                <TextBlock x:Name="RadioTitle" Text="Проверка Bluetooth…" FontWeight="SemiBold" Foreground="{StaticResource AccentTextBrush}" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="SystemDetails" Style="{StaticResource MutedTextStyle}" IsTextSelectionEnabled="True"/>
+                                <Button x:Name="CheckButton" Content="Проверить систему" Click="CheckClick"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Режим сопряжения" Style="{StaticResource SectionTitleStyle}"/>
+                                <ComboBox x:Name="Target" HorizontalAlignment="Stretch" SelectedIndex="0"
+                                          SelectionChanged="TargetChanged" AutomationProperties.Name="Модель наушников">
+                                    <ComboBoxItem Content="Logitech G435"/>
+                                    <ComboBoxItem Content="Edifier W820NB Plus"/>
+                                    <ComboBoxItem Content="Другие наушники"/>
+                                </ComboBox>
+                                <TextBlock x:Name="Instructions" Style="{StaticResource MutedTextStyle}"/>
+                                <TextBlock Text="На время проверки отключите Bluetooth на втором ноутбуке и на телефоне, если они перехватывают подключение." Style="{StaticResource MutedTextStyle}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="ResultsPane" Grid.Column="1" Spacing="16">
+                        <Border Style="{StaticResource PanelStyle}">
+                            <StackPanel Spacing="12">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="Поиск устройств" Style="{StaticResource SectionTitleStyle}" VerticalAlignment="Center"/>
+                                    <Button x:Name="ScanButton" Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}" Click="ScanClick"
+                                            AutomationProperties.Name="{Binding Text, ElementName=ScanLabel}">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <SymbolIcon x:Name="ScanIcon" Symbol="Find"/>
+                                            <TextBlock x:Name="ScanLabel" Text="Начать поиск"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                                <TextBlock x:Name="ScanStatus" Text="Переведите наушники в режим сопряжения и запустите поиск." Style="{StaticResource MutedTextStyle}"
+                                           AutomationProperties.LiveSetting="Polite"/>
+                                <ProgressBar x:Name="ScanProgress" IsIndeterminate="True" Visibility="Collapsed" Foreground="{StaticResource AccentTextBrush}"/>
+                                <TextBox x:Name="Filter" PlaceholderText="Фильтр по имени или Bluetooth-адресу"
+                                         TextChanged="FilterChanged" AutomationProperties.Name="Фильтр по имени или Bluetooth-адресу"/>
+                                <Border Background="{StaticResource InsetBrush}" CornerRadius="8" MinHeight="168">
+                                    <Grid>
+                                        <ListView x:Name="Devices" MaxHeight="295" SelectionChanged="DeviceSelected"
+                                                  AutomationProperties.Name="Обнаруженные Bluetooth-устройства">
+                                            <ListView.ItemContainerStyle>
+                                                <Style TargetType="ListViewItem">
+                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                    <Setter Property="Padding" Value="12,6"/>
+                                                    <Setter Property="MinHeight" Value="48"/>
+                                                    <Setter Property="AutomationProperties.Name" Value="{Binding Title}"/>
+                                                </Style>
+                                            </ListView.ItemContainerStyle>
+                                            <ListView.ItemTemplate>
+                                                <DataTemplate x:DataType="local:DeviceRow">
+                                                    <Grid ColumnSpacing="12">
+                                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock Text="{x:Bind Title, Mode=OneWay}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                            <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" FontSize="12" Foreground="{StaticResource SecondaryTextBrush}" TextTrimming="CharacterEllipsis"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Column="1" Text="{x:Bind Signal, Mode=OneWay}" VerticalAlignment="Center"
+                                                                   Foreground="{StaticResource AccentTextBrush}" FontSize="12"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ListView.ItemTemplate>
+                                        </ListView>
+                                        <TextBlock x:Name="EmptyList" Text="Устройства появятся здесь" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   Style="{StaticResource MutedTextStyle}" IsHitTestVisible="False"/>
+                                    </Grid>
+                                </Border>
+                                <TextBlock x:Name="ResultCount" Style="{StaticResource MutedTextStyle}" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource PanelStyle}">
+                            <StackPanel Spacing="10">
+                                <TextBlock x:Name="SelectedTitle" Text="Сопряжение и звук" Style="{StaticResource SectionTitleStyle}" TextWrapping="Wrap"/>
+                                <TextBlock x:Name="SelectedDetails" Text="Выберите устройство в списке." Style="{StaticResource MutedTextStyle}" IsTextSelectionEnabled="True"/>
+                                <Grid x:Name="SignalPanel" ColumnSpacing="10" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <ProgressBar x:Name="SignalMeter" Width="160" HorizontalAlignment="Left" Minimum="-100" Maximum="-30"
+                                                 AutomationProperties.Name="Последний измеренный сигнал BLE в дБм" Foreground="{StaticResource AccentTextBrush}"/>
+                                    <TextBlock x:Name="SignalReading" Grid.Column="1" FontSize="12" Style="{StaticResource MutedTextStyle}"/>
+                                </Grid>
+                                <TextBlock x:Name="OperationStatus" Visibility="Collapsed" Foreground="{StaticResource AccentTextBrush}"
+                                           TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+                                <StackPanel x:Name="DeviceActions" Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="PairButton" Content="Сопрячь" IsEnabled="False" Style="{StaticResource PrimaryButtonStyle}" Click="PairClick"/>
+                                    <Button x:Name="AudioButton" Content="Проверить аудиовыход" IsEnabled="False" Click="AudioClick"/>
+                                    <Button x:Name="UnpairButton" Content="Забыть" IsEnabled="False" Click="UnpairClick"/>
+                                </StackPanel>
+                                <HyperlinkButton Content="Настройки звука Windows" Click="OpenSoundClick" Padding="0,4"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+                <Expander Header="Журнал диагностики" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                          Background="{StaticResource PanelBrush}">
+                    <StackPanel Spacing="10">
+                        <TextBox x:Name="JournalText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                                 Height="180" FontFamily="Consolas" FontSize="12" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                 AutomationProperties.Name="Журнал диагностики"/>
+                        <Button Content="Скопировать отчёт" Click="CopyClick"/>
+                        <TextBlock x:Name="CopyStatus" Style="{StaticResource MutedTextStyle}" AutomationProperties.LiveSetting="Polite"/>
+                    </StackPanel>
+                </Expander>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</Window>
